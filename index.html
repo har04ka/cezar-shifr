@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f2" />
+    <title>Шифр Цезаря</title>
+    <style>
+      :root {
+        --ink: #202923;
+        --green: #286b4f;
+        --muted: #768078;
+        --line: #e4e8e2;
+        --surface: #fff;
+        --canvas: #f5f6f2;
+        --soft: #f8f9f6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        min-height: 100svh;
+        margin: 0;
+        padding: clamp(24px, 5vw, 56px) 16px;
+        place-items: center;
+        background: var(--canvas);
+        color: var(--ink);
+        font: 15px/1.45 Inter, ui-sans-serif, system-ui, -apple-system,
+          "Segoe UI", sans-serif;
+      }
+
+      .app {
+        width: min(100%, 900px);
+      }
+
+      .heading {
+        margin: 0 0 20px 2px;
+        font-size: clamp(30px, 4vw, 42px);
+        font-weight: 680;
+        letter-spacing: -0.045em;
+        line-height: 1.05;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--surface);
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .modes {
+        display: flex;
+        gap: 2px;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--soft);
+      }
+
+      .mode {
+        min-height: 36px;
+        padding: 8px 13px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--muted);
+        font: 650 13px/1 system-ui, sans-serif;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .mode[aria-pressed="true"] {
+        background: var(--surface);
+        color: var(--green);
+        box-shadow: 0 1px 3px #17231a12;
+      }
+
+      .shift {
+        display: flex;
+        width: min(390px, 48%);
+        min-width: 0;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .shift-label {
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .range {
+        min-width: 48px;
+        min-height: 28px;
+        flex: 1;
+        accent-color: var(--green);
+        cursor: pointer;
+      }
+
+      .num {
+        width: 58px;
+        min-height: 36px;
+        padding: 6px 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: var(--surface);
+        color: var(--ink);
+        font: 600 13px system-ui, sans-serif;
+        text-align: center;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+        align-items: stretch;
+        gap: 12px;
+        padding: 20px;
+      }
+
+      .pane {
+        min-width: 0;
+      }
+
+      .pane-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 22px;
+        margin: 0 2px 8px;
+      }
+
+      .pane-title {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .text-box {
+        display: block;
+        width: 100%;
+        min-height: 220px;
+        padding: 15px 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--soft);
+        color: var(--ink);
+        font: inherit;
+        line-height: 1.6;
+        outline: none;
+        resize: vertical;
+        transition:
+          border 0.15s,
+          background 0.15s,
+          box-shadow 0.15s;
+      }
+
+      .text-box::placeholder {
+        color: #9ca59c;
+      }
+
+      .text-box:focus {
+        border-color: #91ae94;
+        background: var(--surface);
+        box-shadow: 0 0 0 3px #286b4f12;
+      }
+
+      .text-box.output {
+        background: #fbfcfa;
+      }
+
+      .text-box.output:focus {
+        background: var(--surface);
+      }
+
+      .flow {
+        display: grid;
+        place-items: center;
+        color: #8c978d;
+      }
+
+      .flow span {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--surface);
+        font-size: 15px;
+        place-items: center;
+      }
+
+      .bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 20px 18px;
+      }
+
+      .clear {
+        min-height: 38px;
+        padding: 8px 0;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font: 600 12px system-ui, sans-serif;
+        cursor: pointer;
+      }
+
+      .clear:hover {
+        color: var(--ink);
+      }
+
+      .copy {
+        min-height: 38px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font: 650 12px system-ui, sans-serif;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.15s;
+      }
+
+      .copy:hover {
+        background: #1d553e;
+      }
+
+      .status {
+        min-height: 18px;
+        margin-left: auto;
+        color: var(--green);
+        font-size: 12px;
+      }
+
+      .mode:focus-visible,
+      .copy:focus-visible,
+      .clear:focus-visible,
+      .num:focus-visible,
+      .range:focus-visible,
+      .text-box:focus-visible {
+        outline: 2px solid #7da98b;
+        outline-offset: 3px;
+      }
+
+      @media (max-width: 700px) {
+        body {
+          padding: 24px 14px;
+          place-items: start center;
+        }
+
+        .toolbar {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 14px;
+          padding: 16px;
+        }
+
+        .modes {
+          align-self: flex-start;
+        }
+
+        .shift {
+          width: 100%;
+        }
+
+        .workspace {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 10px;
+          padding: 16px;
+        }
+
+        .text-box {
+          min-height: 170px;
+        }
+
+        .flow {
+          height: 20px;
+          transform: rotate(90deg);
+        }
+
+        .bottom {
+          padding: 0 16px 16px;
+        }
+
+        .heading {
+          margin-bottom: 16px;
+        }
+      }
+
+      @media (max-width: 420px) {
+        body {
+          padding: 18px 10px;
+        }
+
+        .heading {
+          font-size: 30px;
+        }
+
+        .toolbar,
+        .workspace {
+          padding-right: 12px;
+          padding-left: 12px;
+        }
+
+        .modes {
+          width: 100%;
+        }
+
+        .mode {
+          flex: 1;
+          padding: 8px 6px;
+          font-size: 12px;
+        }
+
+        .shift {
+          gap: 8px;
+        }
+
+        .shift-label {
+          font-size: 12px;
+        }
+
+        .num {
+          width: 52px;
+        }
+
+        .bottom {
+          padding-right: 12px;
+          padding-left: 12px;
+        }
+
+        .bottom {
+          flex-wrap: wrap;
+        }
+
+        .status {
+          order: 3;
+          width: 100%;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1 class="heading">Шифр Цезаря</h1>
+
+      <section class="card" aria-label="Шифр Цезаря">
+        <div class="toolbar">
+          <div class="modes" role="group" aria-label="Режим">
+            <button
+              class="mode"
+              id="encrypt"
+              type="button"
+              aria-pressed="true"
+            >
+              Зашифровать
+            </button>
+            <button
+              class="mode"
+              id="decrypt"
+              type="button"
+              aria-pressed="false"
+            >
+              Расшифровать
+            </button>
+          </div>
+
+          <div class="shift">
+            <span class="shift-label">Сдвиг</span>
+            <input
+              class="range"
+              id="range"
+              type="range"
+              min="0"
+              max="32"
+              value="3"
+              aria-label="Сдвиг"
+            />
+            <input
+              class="num"
+              id="number"
+              type="number"
+              min="0"
+              max="32"
+              value="3"
+              aria-label="Число сдвига"
+            />
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div class="pane">
+            <div class="pane-head">
+              <label class="pane-title" for="source">Исходный текст</label>
+            </div>
+            <textarea
+              class="text-box"
+              id="source"
+              placeholder="Введите текст"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <div class="flow" aria-hidden="true"><span>→</span></div>
+
+          <div class="pane">
+            <div class="pane-head">
+              <label class="pane-title" for="result">Результат</label>
+            </div>
+            <textarea
+              class="text-box output"
+              id="result"
+              readonly
+              placeholder="Здесь появится результат"
+              aria-live="polite"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="bottom">
+          <button class="clear" id="clear" type="button">Очистить</button>
+          <span class="status" id="status" role="status" aria-live="polite"></span>
+          <button class="copy" id="copy" type="button">
+            Копировать результат
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const russianAlphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+        const englishAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        const source = document.querySelector('#source');
+        const result = document.querySelector('#result');
+        const range = document.querySelector('#range');
+        const number = document.querySelector('#number');
+        const status = document.querySelector('#status');
+        const encryptButton = document.querySelector('#encrypt');
+        const decryptButton = document.querySelector('#decrypt');
+
+        let direction = 1;
+
+        function transformText(text, shift) {
+          const delta = direction * shift;
+
+          return Array.from(text, (character) => {
+            const uppercaseCharacter = character.toLocaleUpperCase('ru');
+            let alphabet = russianAlphabet;
+            let index = alphabet.indexOf(uppercaseCharacter);
+
+            if (index < 0) {
+              alphabet = englishAlphabet;
+              index = alphabet.indexOf(uppercaseCharacter);
+            }
+
+            if (index < 0) {
+              return character;
+            }
+
+            const shiftedIndex =
+              (index + (delta % alphabet.length) + alphabet.length) %
+              alphabet.length;
+            const shiftedCharacter = alphabet[shiftedIndex];
+
+            return character === uppercaseCharacter
+              ? shiftedCharacter
+              : shiftedCharacter.toLocaleLowerCase('ru');
+          }).join('');
+        }
+
+        function update() {
+          const shift = Math.max(
+            0,
+            Math.min(32, Math.trunc(Number(range.value) || 0)),
+          );
+
+          range.value = number.value = shift;
+          result.value = transformText(source.value, shift);
+          status.textContent = '';
+        }
+
+        function setMode(value) {
+          direction = value;
+          encryptButton.setAttribute('aria-pressed', String(value === 1));
+          decryptButton.setAttribute('aria-pressed', String(value === -1));
+          update();
+        }
+
+        range.addEventListener('input', () => {
+          number.value = range.value;
+          update();
+        });
+
+        number.addEventListener('input', () => {
+          if (number.value === '') {
+            return;
+          }
+
+          range.value = String(
+            Math.max(0, Math.min(32, Math.trunc(Number(number.value) || 0))),
+          );
+          update();
+        });
+
+        number.addEventListener('change', () => {
+          range.value = String(
+            Math.max(0, Math.min(32, Math.trunc(Number(number.value) || 0))),
+          );
+          update();
+        });
+
+        source.addEventListener('input', update);
+        encryptButton.addEventListener('click', () => setMode(1));
+        decryptButton.addEventListener('click', () => setMode(-1));
+
+        document.querySelector('#clear').addEventListener('click', () => {
+          source.value = '';
+          update();
+          source.focus();
+        });
+
+        document.querySelector('#copy').addEventListener('click', async () => {
+          if (!result.value) {
+            status.textContent = '';
+            return;
+          }
+
+          try {
+            await navigator.clipboard.writeText(result.value);
+            status.textContent = 'Скопировано';
+          } catch {
+            result.focus();
+            result.select();
+            document.execCommand('copy');
+            status.textContent = 'Скопировано';
+          }
+        });
+
+        update();
+      })();
+    </script>
+  </body>
+</html>
