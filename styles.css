@@ -454,3 +454,24 @@ body { place-items:center; }
 @media(prefers-reduced-motion:reduce) {
   .cipher-tile,.demo-letter,.demo-progress::-webkit-progress-value,.atbash-view .cipher-tile::after { transition:none; animation:none; }
 }
+/* Keep the active pair beside its alphabet rather than pushing it below the fold. */
+.animation-animation { display:grid; grid-template-columns:170px minmax(0,1fr); align-items:start; gap:20px; }
+.demonstration { margin:0; padding:12px; position:sticky; top:16px; }
+.demo-top { flex-direction:column; align-items:flex-start; justify-content:center; gap:5px; height:60px; }
+.demo-pair { gap:8px; height:84px; }
+.demo-letter { width:48px; height:54px; font-size:27px; }
+.demo-connector { width:24px; font-size:21px; }
+.alphabet-board { min-width:0; }
+.alphabet-board .animation-legend { margin-top:0; gap:10px; font-size:11px; }
+.alphabet-board .cipher-caption { margin-top:12px; }
+.alphabet-board .cipher-tile { font-size:15px; }
+.alphabet-board .animation-frame { margin-top:8px; }
+@media(max-width:700px) {
+  .animation-animation { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .demonstration { position:static; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; }
+  .demo-top { height:60px; }
+  .demo-pair { height:60px; gap:10px; }
+  .demo-letter { width:42px; height:46px; font-size:25px; }
+  .demo-progress { grid-column:1/-1; margin-top:8px; }
+  .alphabet-board .cipher-tile { font-size:14px; }
+}

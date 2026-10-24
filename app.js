@@ -85,7 +85,10 @@
         }
         const demonstration = window.CipherDemonstration.create();
         const animationDelay = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds / Number(speed.value)));
-        animation.append(demonstration.element, legend, caption('Русский алфавит'), russianRow, caption('Латинский алфавит'), englishRow, frame);
+        const alphabetBoard = document.createElement('div');
+        alphabetBoard.className = 'alphabet-board';
+        alphabetBoard.append(legend, caption('Русский алфавит'), russianRow, caption('Латинский алфавит'), englishRow, frame);
+        animation.append(demonstration.element, alphabetBoard);
         document.querySelector('section').append(animation);
         let running = false;
 
