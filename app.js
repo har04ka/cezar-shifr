@@ -53,7 +53,7 @@
           });
         }
         function clearAlphabetHighlight() {
-          [...russianRow.children, ...englishRow.children].forEach(tile => tile.classList.remove('current', 'origin', 'transit', 'destination', 'pair-target'));
+          [...russianRow.children, ...englishRow.children].forEach(tile => tile.classList.remove('current', 'origin', 'transit', 'destination', 'pair-target', 'visited'));
         }
         const controls = document.createElement('div');
         controls.className = 'animation-controls';
@@ -83,8 +83,9 @@
           item.append(dot, text);
           legend.append(item);
         }
+        const demonstration = window.CipherDemonstration.create();
         const animationDelay = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds / Number(speed.value)));
-        animation.append(legend, caption('Русский алфавит'), russianRow, caption('Латинский алфавит'), englishRow, frame);
+        animation.append(demonstration.element, legend, caption('Русский алфавит'), russianRow, caption('Латинский алфавит'), englishRow, frame);
         document.querySelector('section').append(animation);
         let running = false;
 
@@ -94,12 +95,14 @@
             running = false;
             clearAlphabetHighlight();
             play.textContent = 'Начать';
+            demonstration.pause();
             return;
           }
           running = true;
           play.textContent = 'Остановить';
           let completed = '';
           const characters = Array.from(source.value);
+          demonstration.begin(characters.length);
           const progress = document.createElement('span');
           frame.replaceChildren(progress);
           for (let i = 0; i < characters.length; i++) {
@@ -111,6 +114,7 @@
             clearAlphabetHighlight();
             const alphabetRow = alphabet === russianAlphabet ? russianRow : englishRow;
             const originIndex = alphabet.indexOf(upper);
+            demonstration.character(character, i, characters.length, cipherType === 'atbash' ? 'Зеркальная замена' : `${direction > 0 ? 'Вправо' : 'Влево'} на ${Number(range.value)}`);
             if (cipherType === 'atbash') {
               if (alphabet) alphabetRow.children[originIndex].classList.add('origin');
               progress.textContent = alphabet ? `${character} — ищем букву в верхнем алфавите` : `${character === ' ' ? 'Пробел' : character} — символ не изменяется`;
@@ -120,6 +124,8 @@
                 alphabetRow.children[originIndex].classList.add('pair-target');
               }
               const replacement = transformText(character);
+              demonstration.replacement(replacement, true);
+              demonstration.advance(i + 1);
               progress.textContent = alphabet ? `${character} → ${replacement} · зеркальная пара: ${originIndex + 1} ↔ ${alphabet.length - originIndex}` : 'Этот символ остаётся без изменений';
               completed += replacement;
               await animationDelay(800);
@@ -130,18 +136,23 @@
               const index = alphabet ? (alphabet.indexOf(upper) + direction * step + alphabet.length) % alphabet.length : 0;
               const current = alphabet ? alphabet[index] : character;
               Array.from(alphabetRow.children).forEach((tile, tileIndex) => {
+                if (alphabet && tileIndex === index && step > 0) tile.classList.add('visited');
                 tile.classList.toggle('origin', Boolean(alphabet) && tileIndex === originIndex);
                 tile.classList.toggle('transit', Boolean(alphabet) && tileIndex === index && step > 0 && step < steps);
                 tile.classList.toggle('destination', Boolean(alphabet) && tileIndex === index && step === steps);
               });
-              progress.textContent = alphabet ? `${character} → ${current} · шаг ${step} из ${steps}` : 'Этот символ остаётся без изменений';
+              const displayCurrent = character === upper ? current : current.toLocaleLowerCase('ru');
+              demonstration.replacement(displayCurrent, step === steps);
+              progress.textContent = alphabet ? `${character} → ${displayCurrent} · шаг ${step} из ${steps}` : 'Этот символ остаётся без изменений';
               await animationDelay(steps ? Math.max(150, 900 / steps) : 250);
             }
             if (version !== animationVersion) return;
+            demonstration.advance(i + 1);
             completed += transformText(character, Number(range.value));
             await animationDelay(450);
           }
           if (version !== animationVersion) return;
+          demonstration.finish();
           progress.textContent = completed ? 'Готово — все буквы заменены' : 'Введите текст для анимации';
           clearAlphabetHighlight();
           running = false;
@@ -153,6 +164,7 @@
           animationVersion++;
           running = false;
           frame.textContent = '';
+          demonstration.reset();
           play.disabled = !source.value;
           play.textContent = 'Начать';
           const shift = Math.max(
