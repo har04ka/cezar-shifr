@@ -1,7 +1,10 @@
 
       (() => {
         const { russianAlphabet, englishAlphabet } = window.CaesarCipher;
-        const transformText = (text, shift) => window.CaesarCipher.transformText(text, shift, direction);
+        let cipherType = 'caesar';
+        const transformText = (text, shift) => cipherType === 'atbash'
+          ? window.AtbashCipher.transformText(text)
+          : window.CaesarCipher.transformText(text, shift, direction);
 
         const source = document.querySelector('#source');
         const result = document.querySelector('#result');
@@ -44,8 +47,13 @@
         russianRow.className = 'alphabet-grid';
         const englishRow = makeRow(englishAlphabet);
         englishRow.className = 'alphabet-grid latin';
+        for (const [row, alphabet] of [[russianRow, russianAlphabet], [englishRow, englishAlphabet]]) {
+          Array.from(row.children).forEach((tile, index) => {
+            tile.dataset.mirror = alphabet[alphabet.length - 1 - index];
+          });
+        }
         function clearAlphabetHighlight() {
-          [...russianRow.children, ...englishRow.children].forEach(tile => tile.classList.remove('current', 'origin', 'transit', 'destination'));
+          [...russianRow.children, ...englishRow.children].forEach(tile => tile.classList.remove('current', 'origin', 'transit', 'destination', 'pair-target'));
         }
         const controls = document.createElement('div');
         controls.className = 'animation-controls';
@@ -95,6 +103,7 @@
           const progress = document.createElement('span');
           frame.replaceChildren(progress);
           for (let i = 0; i < characters.length; i++) {
+            if (version !== animationVersion) return;
             const character = characters[i];
             const upper = character.toLocaleUpperCase('ru');
             const alphabet = russianAlphabet.includes(upper) ? russianAlphabet : englishAlphabet.includes(upper) ? englishAlphabet : '';
@@ -102,6 +111,20 @@
             clearAlphabetHighlight();
             const alphabetRow = alphabet === russianAlphabet ? russianRow : englishRow;
             const originIndex = alphabet.indexOf(upper);
+            if (cipherType === 'atbash') {
+              if (alphabet) alphabetRow.children[originIndex].classList.add('origin');
+              progress.textContent = alphabet ? `${character} — ищем букву в верхнем алфавите` : `${character === ' ' ? 'Пробел' : character} — символ не изменяется`;
+              await animationDelay(450);
+              if (version !== animationVersion) return;
+              if (alphabet) {
+                alphabetRow.children[originIndex].classList.add('pair-target');
+              }
+              const replacement = transformText(character);
+              progress.textContent = alphabet ? `${character} → ${replacement} · зеркальная пара: ${originIndex + 1} ↔ ${alphabet.length - originIndex}` : 'Этот символ остаётся без изменений';
+              completed += replacement;
+              await animationDelay(800);
+              continue;
+            }
             for (let step = 0; step <= steps; step++) {
               if (version !== animationVersion) return;
               const index = alphabet ? (alphabet.indexOf(upper) + direction * step + alphabet.length) % alphabet.length : 0;
@@ -175,6 +198,25 @@
         source.addEventListener('input', update);
         encryptButton.addEventListener('click', () => setMode(1));
         decryptButton.addEventListener('click', () => setMode(-1));
+
+        function selectCipher(type) {
+          cipherType = type;
+          const isAtbash = type === 'atbash';
+          document.querySelector('#caesar-choice').setAttribute('aria-pressed', String(!isAtbash));
+          document.querySelector('#atbash-choice').setAttribute('aria-pressed', String(isAtbash));
+          document.querySelector('.shift').hidden = isAtbash;
+          document.querySelector('.modes').hidden = isAtbash;
+          document.querySelector('.toolbar').hidden = isAtbash;
+          animation.classList.toggle('atbash-view', isAtbash);
+          legend.children[1].hidden = isAtbash;
+          document.querySelector('#cipher-description').textContent = isAtbash
+            ? 'Атбаш: первая буква заменяется последней, вторая — предпоследней. В каждой плитке сверху исходная буква, снизу — замена. Повторное преобразование расшифровывает текст.'
+            : 'Цезарь: каждая буква сдвигается по алфавиту на выбранное число позиций.';
+          update();
+        }
+
+        document.querySelector('#caesar-choice').addEventListener('click', () => selectCipher('caesar'));
+        document.querySelector('#atbash-choice').addEventListener('click', () => selectCipher('atbash'));
 
         document.querySelector('#clear').addEventListener('click', () => {
           source.value = '';
