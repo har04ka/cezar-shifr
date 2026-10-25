@@ -475,3 +475,42 @@ body { place-items:center; }
   .demo-progress { grid-column:1/-1; margin-top:8px; }
   .alphabet-board .cipher-tile { font-size:14px; }
 }
+/* Simple educational interface. */
+:root { --ink:#222; --green:#315b89; --muted:#666; --line:#ccc; --surface:#fff; --canvas:#f4f4f4; --soft:#fafafa; }
+body { font-family:Arial,Helvetica,sans-serif; padding:24px 16px; }
+.app { width:min(100%,920px); }
+.heading { font-size:28px; font-weight:600; letter-spacing:normal; margin-bottom:18px; }
+.card { border:1px solid #bbb; border-radius:3px; }
+.cipher-picker { background:transparent; padding:0; gap:6px; border-radius:0; }
+.mode { border:1px solid #bbb; border-radius:3px; background:#f2f2f2; color:#444; font-weight:normal; }
+.mode[aria-pressed="true"] { background:#e3edf7; border-color:#7393b3; color:#193e65; box-shadow:none; }
+.modes { background:transparent; border:0; padding:0; gap:6px; border-radius:0; }
+.cipher-description { color:#555; line-height:1.5; }
+.text-box,.num { border-radius:2px; background:#fff; }
+.text-box:focus { border-color:#7393b3; box-shadow:none; }
+.text-box.output { background:#f8f8f8; }
+.flow span { border:0; background:transparent; }
+.animation-play { border:1px solid #8197aa; border-radius:3px; background:#e4ecf3; color:#163b5f; font:normal 14px Arial,sans-serif; box-shadow:none; }
+.animation-play:hover:not(:disabled) { background:#d5e2ee; box-shadow:none; }
+.animation-animation { grid-template-columns:155px minmax(0,1fr); gap:18px; }
+.demonstration { border:1px solid #ccc; border-radius:2px; background:#fafafa; }
+.demo-letter { border-radius:2px; box-shadow:none; font-family:Arial,sans-serif; font-weight:normal; }
+.demo-from { background:#e5edfa; color:#23476e; }
+.demo-to { background:#fff5d7; color:#755b17; }
+.has-result .demo-to { background:#dcebdc; color:#28542e; border-color:#83a786; box-shadow:none; }
+.demo-top { color:#555; }
+.demo-progress { accent-color:#6d8baf; }
+.demo-progress::-webkit-progress-value { background:#6d8baf; }
+.demo-progress::-moz-progress-bar { background:#6d8baf; }
+.cipher-tile,.alphabet-grid .cipher-tile { border-radius:2px; background:#f4f4f4; border-color:#ccc; color:#222; font-weight:normal; box-shadow:none; }
+.cipher-tile.origin { background:#dce8fa; border-color:#7296c5; color:#23476e; box-shadow:none; }
+.cipher-tile.visited { background:#fff9e7; border-color:#d8c99b; }
+.cipher-tile.transit { background:#ffe8a1; border-color:#b69742; color:#60470d; box-shadow:none; }
+.cipher-tile.destination { background:#dcebdc; border-color:#83a786; color:#28542e; box-shadow:none; }
+.atbash-view .alphabet-grid .cipher-tile::after { border-radius:1px; }
+.atbash-view .alphabet-grid .cipher-tile.pair-target::after { background:#dcebdc; color:#28542e; box-shadow:none; }
+.legend-28664f { background:#83a786; }
+.legend-88a9e8 { background:#7296c5; }
+.legend-d9ad51 { background:#d8b150; }
+.animation-legend i { border-radius:0; }
+@media(max-width:700px) { .heading { font-size:24px; } .animation-animation { grid-template-columns:minmax(0,1fr); } }
