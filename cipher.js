@@ -1,34 +1,37 @@
-window.CaesarCipher = (() => {
-const russianAlphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
-const englishAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        function transformText(text, shift, direction = 1) {
-          const delta = direction * shift;
+// Алфавиты содержат только заглавные буквы. Их номера начинаются с нуля.
+window.CaesarCipher = (function () {
+  const russianAlphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+  const englishAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-          return Array.from(text, (character) => {
-            const uppercaseCharacter = character.toLocaleUpperCase('ru');
-            let alphabet = russianAlphabet;
-            let index = alphabet.indexOf(uppercaseCharacter);
+  function findAlphabet(letter) {
+    const upperLetter = letter.toLocaleUpperCase('ru');
+    if (russianAlphabet.includes(upperLetter)) return russianAlphabet;
+    if (englishAlphabet.includes(upperLetter)) return englishAlphabet;
+    return '';
+  }
 
-            if (index < 0) {
-              alphabet = englishAlphabet;
-              index = alphabet.indexOf(uppercaseCharacter);
-            }
+  function keepLetterCase(original, replacement) {
+    if (original === original.toLocaleUpperCase('ru')) return replacement;
+    return replacement.toLocaleLowerCase('ru');
+  }
 
-            if (index < 0) {
-              return character;
-            }
+  // direction = 1 для шифрования, -1 для расшифровки.
+  function transformText(text, shift, direction = 1) {
+    let result = '';
+    for (const letter of text) {
+      const alphabet = findAlphabet(letter);
+      if (alphabet === '') {
+        result += letter;
+        continue;
+      }
+      const oldIndex = alphabet.indexOf(letter.toLocaleUpperCase('ru'));
+      const offset = (shift * direction) % alphabet.length;
+      // Остаток от деления возвращает нас к началу алфавита при переходе за край.
+      const newIndex = (oldIndex + offset + alphabet.length) % alphabet.length;
+      result += keepLetterCase(letter, alphabet[newIndex]);
+    }
+    return result;
+  }
 
-            const shiftedIndex =
-              (index + (delta % alphabet.length) + alphabet.length) %
-              alphabet.length;
-            const shiftedCharacter = alphabet[shiftedIndex];
-
-            return character === uppercaseCharacter
-              ? shiftedCharacter
-              : shiftedCharacter.toLocaleLowerCase('ru');
-          }).join('');
-        }
-
-
-return { russianAlphabet, englishAlphabet, transformText };
+  return { russianAlphabet, englishAlphabet, findAlphabet, keepLetterCase, transformText };
 })();

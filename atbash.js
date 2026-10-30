@@ -1,17 +1,18 @@
-// Atbash reverses each alphabet. Applying it twice restores the original text.
-window.AtbashCipher = (() => {
-  const { russianAlphabet, englishAlphabet } = window.CaesarCipher;
-
+// Формула Атбаша: y = N - 1 - x. Повторная замена возвращает исходный текст.
+window.AtbashCipher = (function () {
   function transformText(text) {
-    return Array.from(text, (character) => {
-      const upper = character.toLocaleUpperCase('ru');
-      const alphabet = [russianAlphabet, englishAlphabet].find((letters) =>
-        letters.includes(upper),
-      );
-      if (!alphabet) return character;
-      const replacement = alphabet[alphabet.length - 1 - alphabet.indexOf(upper)];
-      return character === upper ? replacement : replacement.toLocaleLowerCase('ru');
-    }).join('');
+    let result = '';
+    for (const letter of text) {
+      const alphabet = window.CaesarCipher.findAlphabet(letter);
+      if (alphabet === '') {
+        result += letter;
+        continue;
+      }
+      const oldIndex = alphabet.indexOf(letter.toLocaleUpperCase('ru'));
+      const newIndex = alphabet.length - 1 - oldIndex;
+      result += window.CaesarCipher.keepLetterCase(letter, alphabet[newIndex]);
+    }
+    return result;
   }
 
   return { transformText };
