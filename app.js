@@ -83,12 +83,11 @@
           item.append(dot, text);
           legend.append(item);
         }
-        const demonstration = window.CipherDemonstration.create();
         const animationDelay = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds / Number(speed.value)));
         const alphabetBoard = document.createElement('div');
         alphabetBoard.className = 'alphabet-board';
         alphabetBoard.append(legend, caption('Русский алфавит'), russianRow, caption('Латинский алфавит'), englishRow, frame);
-        animation.append(demonstration.element, alphabetBoard);
+        animation.append(alphabetBoard);
         document.querySelector('section').append(animation);
         let running = false;
 
@@ -98,14 +97,12 @@
             running = false;
             clearAlphabetHighlight();
             play.textContent = 'Начать';
-            demonstration.pause();
             return;
           }
           running = true;
           play.textContent = 'Остановить';
           let completed = '';
           const characters = Array.from(source.value);
-          demonstration.begin(characters.length);
           const progress = document.createElement('span');
           frame.replaceChildren(progress);
           for (let i = 0; i < characters.length; i++) {
@@ -117,7 +114,6 @@
             clearAlphabetHighlight();
             const alphabetRow = alphabet === russianAlphabet ? russianRow : englishRow;
             const originIndex = alphabet.indexOf(upper);
-            demonstration.character(character, i, characters.length, cipherType === 'atbash' ? 'Зеркальная замена' : `${direction > 0 ? 'Вправо' : 'Влево'} на ${Number(range.value)}`);
             if (cipherType === 'atbash') {
               if (alphabet) alphabetRow.children[originIndex].classList.add('origin');
               progress.textContent = alphabet ? `${character} — ищем букву в верхнем алфавите` : `${character === ' ' ? 'Пробел' : character} — символ не изменяется`;
@@ -127,8 +123,6 @@
                 alphabetRow.children[originIndex].classList.add('pair-target');
               }
               const replacement = transformText(character);
-              demonstration.replacement(replacement, true);
-              demonstration.advance(i + 1);
               progress.textContent = alphabet ? `${character} → ${replacement} · зеркальная пара: ${originIndex + 1} ↔ ${alphabet.length - originIndex}` : 'Этот символ остаётся без изменений';
               completed += replacement;
               await animationDelay(800);
@@ -145,17 +139,14 @@
                 tile.classList.toggle('destination', Boolean(alphabet) && tileIndex === index && step === steps);
               });
               const displayCurrent = character === upper ? current : current.toLocaleLowerCase('ru');
-              demonstration.replacement(displayCurrent, step === steps);
               progress.textContent = alphabet ? `${character} → ${displayCurrent} · шаг ${step} из ${steps}` : 'Этот символ остаётся без изменений';
               await animationDelay(steps ? Math.max(150, 900 / steps) : 250);
             }
             if (version !== animationVersion) return;
-            demonstration.advance(i + 1);
             completed += transformText(character, Number(range.value));
             await animationDelay(450);
           }
           if (version !== animationVersion) return;
-          demonstration.finish();
           progress.textContent = completed ? 'Готово — все буквы заменены' : 'Введите текст для анимации';
           clearAlphabetHighlight();
           running = false;
@@ -167,7 +158,6 @@
           animationVersion++;
           running = false;
           frame.textContent = '';
-          demonstration.reset();
           play.disabled = !source.value;
           play.textContent = 'Начать';
           const shift = Math.max(
@@ -217,6 +207,7 @@
         function selectCipher(type) {
           cipherType = type;
           const isAtbash = type === 'atbash';
+          document.querySelector('#atbash-formula').hidden = !isAtbash;
           document.querySelector('#caesar-choice').setAttribute('aria-pressed', String(!isAtbash));
           document.querySelector('#atbash-choice').setAttribute('aria-pressed', String(isAtbash));
           document.querySelector('.shift').hidden = isAtbash;
