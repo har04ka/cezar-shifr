@@ -42,5 +42,26 @@ window.MorseAudio = (function () {
     sound.start(now);
     sound.stop(now + duration);
   }
-  return { prepare, tone, stop };
+
+  // Для ручного ключа сигнал звучит всё время, пока кнопка удерживается.
+  function hold() {
+    if (!context || context.state !== 'running') return;
+    stop();
+    const sound = context.createOscillator();
+    const gain = context.createGain();
+    sound.type = 'sine';
+    sound.frequency.value = 600;
+    gain.gain.setValueAtTime(0, context.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, context.currentTime + 0.005);
+    sound.connect(gain);
+    gain.connect(context.destination);
+    oscillator = sound;
+    sound.onended = function () {
+      sound.disconnect();
+      gain.disconnect();
+      if (oscillator === sound) oscillator = null;
+    };
+    sound.start();
+  }
+  return { prepare, tone, hold, stop };
 })();

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f5f6f7" />
   <title>Шифры</title>
-  <link rel="stylesheet" href="styles.css?v=20261104-eight" />
+  <link rel="stylesheet" href="styles.css?v=20261104-key" />
 </head>
 <body>
 <main class="app">
@@ -39,6 +39,13 @@
         <label data-setting="feistel" hidden>Ключ DES <input id="des-key" value="133457799BBCDFF1" maxlength="16" spellcheck="false" autocomplete="off" /></label>
         <label data-setting="feistel" hidden>Формат <select id="des-format"><option value="text">Текст UTF-8</option><option value="hex">HEX-блоки</option></select></label>
       </div>
+    </div>
+    <div class="manual-morse" id="manual-morse" hidden>
+      <button id="morse-key" type="button" aria-pressed="false">Ключ Морзе · удерживайте</button>
+      <output class="key-sequence" id="key-sequence" aria-label="Текущая комбинация">—</output>
+      <div class="key-actions"><button id="key-commit" type="button">Завершить букву</button><button id="key-space" type="button">Пробел</button><button id="key-delete" type="button">Стереть букву</button></div>
+      <p id="key-feedback" role="status"></p>
+      <p class="key-hint">Точка: удержание менее 0,36 с; тире: от 0,36 с. Пауза 0,54 с завершает букву, 1,26 с разделяет слова.</p>
     </div>
     <div class="workspace">
       <div class="pane">
@@ -79,17 +86,18 @@
     </div>
   </section>
 </main>
-<script src="cipher-tools.js?v=20261104-eight" defer></script>
-<script src="cipher.js?v=20261104-eight" defer></script>
-<script src="atbash.js?v=20261104-eight" defer></script>
-<script src="lesson-ciphers.js?v=20261104-eight" defer></script>
-<script src="scytale.js?v=20261104-eight" defer></script>
-<script src="morse.js?v=20261104-eight" defer></script>
-<script src="morse-audio.js?v=20261104-eight" defer></script>
-<script src="polybius.js?v=20261104-eight" defer></script>
-<script src="feistel.js?v=20261104-eight" defer></script>
-<script src="digital.js?v=20261104-eight" defer></script>
-<script src="vigenere.js?v=20261104-eight" defer></script>
-<script src="app.js?v=20261104-eight" defer></script>
+<script src="cipher-tools.js?v=20261104-key" defer></script>
+<script src="cipher.js?v=20261104-key" defer></script>
+<script src="atbash.js?v=20261104-key" defer></script>
+<script src="lesson-ciphers.js?v=20261104-key" defer></script>
+<script src="scytale.js?v=20261104-key" defer></script>
+<script src="morse.js?v=20261104-key" defer></script>
+<script src="morse-audio.js?v=20261104-key" defer></script>
+<script src="morse-key.js?v=20261104-key" defer></script>
+<script src="polybius.js?v=20261104-key" defer></script>
+<script src="feistel.js?v=20261104-key" defer></script>
+<script src="digital.js?v=20261104-key" defer></script>
+<script src="vigenere.js?v=20261104-key" defer></script>
+<script src="app.js?v=20261104-key" defer></script>
 </body>
 </html>

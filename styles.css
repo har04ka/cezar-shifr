@@ -100,3 +100,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 @media(max-width:420px) { .animation-controls { width:100%; justify-content:space-between; } .cipher-picker .mode { padding:6px 9px; font-size:12px; } }
 @media(prefers-reduced-motion:reduce) { .lesson-table td,.lesson-table th { transition:none; } }
+
+/* Телеграфный ключ: одна большая кнопка для мыши, клавиатуры и касаний. */
+.manual-morse { margin:16px 20px 0; padding-bottom:14px; border-bottom:1px solid var(--line); }
+#morse-key { width:100%; min-height:68px; border:0; border-radius:5px; background:#e7eef6; color:#32577d; font-weight:600; touch-action:none; user-select:none; -webkit-user-select:none; }
+#morse-key.is-down { background:#ffdf83; color:#63450c; }
+#morse-key.is-dash { background:#a8dfbf; color:#205639; }
+.key-sequence { display:block; min-height:40px; padding:8px 0; font:bold 24px/1 monospace; letter-spacing:5px; overflow-wrap:anywhere; }
+.key-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.key-actions button { padding:6px 10px; border:1px solid var(--line); border-radius:4px; background:#fafbfc; color:#546576; font-size:12px; }
+#key-feedback { min-height:36px; margin:10px 0 0; color:#49647c; font-size:13px; }
+.key-hint { margin:4px 0 0; font-size:12px; color:var(--muted); line-height:1.6; }
+@media(max-width:700px) { .manual-morse { margin:14px 16px 0; } }

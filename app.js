@@ -12,7 +12,7 @@
     caesar: 'Цезарь: сдвиг букв по алфавиту на выбранное число позиций.',
     atbash: 'Атбаш: первая буква заменяется последней. В плитке сверху исходная буква, снизу — её зеркальная пара.',
     scytale: 'Скитала: перестановка символов. Записываем текст по строкам развёртки, считываем по столбцам.',
-    morse: 'Азбука Морзе: буквы превращаются в точки и тире. При нажатии «Начать» сигналы подсвечиваются и звучат.',
+    morse: 'Морзе: удерживайте ключ для ввода сигналов. Короткое нажатие — точка, длинное — тире. Пауза завершает букву.',
     polybius: 'Квадрат Полибия: вариант со слайда с перестановкой координат и повторной заменой букв.',
     feistel: 'Сеть Фейстеля: стандартный пример DES, 16 раундов. Следим за обменом половин и операцией XOR.',
     digital: 'Цифровой шифр со слайда: номер позиции буквы, затем номер её раздела.',
@@ -162,15 +162,29 @@
   }
 
   function selectCipher(name) {
+    const changed = selectedCipher !== name;
+    morseKey.reset();
+    if (changed && (name === 'morse' || selectedCipher === 'morse')) sourceInput.value = '';
+    if (changed) decrypt = name === 'morse';
     selectedCipher = name;
+    const manual = name === 'morse' && decrypt;
+    document.querySelector('#manual-morse').hidden = !manual;
+    document.querySelector('#example').hidden = manual;
+    sourceInput.readOnly = manual;
+    document.querySelector('label[for="source"]').textContent = manual ? 'Введённые сигналы' : 'Исходный текст';
+    document.querySelector('#encrypt').textContent = name === 'morse' ? 'Текст → Морзе' : 'Зашифровать';
+    document.querySelector('#decrypt').textContent = name === 'morse' ? 'Ключ → текст' : 'Расшифровать';
+    document.querySelector('#encrypt').setAttribute('aria-pressed', String(!decrypt));
+    document.querySelector('#decrypt').setAttribute('aria-pressed', String(decrypt));
     for (const button of document.querySelectorAll('[data-cipher]')) button.setAttribute('aria-pressed', String(button.dataset.cipher === name));
     for (const field of document.querySelectorAll('[data-setting]')) field.hidden = field.dataset.setting !== name;
     document.querySelector('#cipher-description').textContent = descriptions[name];
-    sourceInput.placeholder = decrypt ? 'Введите зашифрованный текст' : 'Введите текст';
+    sourceInput.placeholder = manual ? 'Нажимайте и удерживайте ключ выше' : decrypt ? 'Введите зашифрованный текст' : 'Введите текст';
     updateResult();
   }
 
   function setMode(value) {
+    if (selectedCipher === 'morse') sourceInput.value = '';
     decrypt = value;
     document.querySelector('#encrypt').setAttribute('aria-pressed', String(!value));
     document.querySelector('#decrypt').setAttribute('aria-pressed', String(value));
@@ -248,6 +262,10 @@
       stepStatus.textContent = 'Остановлено. Повторный запуск — с начала.';
       return;
     }
+    if (selectedCipher === 'morse' && decrypt) {
+      morseKey.commit();
+      morseKey.cancel();
+    }
     if (!calculation || !sourceInput.value) return;
     const data = calculation;
     const runId = ++animationId;
@@ -297,16 +315,26 @@
     if (Number.isInteger(Number(this.value)) && Number(this.value) >= 0 && Number(this.value) <= 32 && this.value !== '') document.querySelector('#range').value = this.value;
     updateResult();
   });
-  for (const field of document.querySelectorAll('#settings input:not(#range):not(#number), #settings select')) field.addEventListener('input', updateResult);
+  for (const field of document.querySelectorAll('#settings input:not(#range):not(#number), #settings select')) field.addEventListener('input', function () {
+    if (this.id === 'morse-language') { morseKey.reset(); sourceInput.value = ''; }
+    if (this.id === 'sound') morseKey.cancel();
+    updateResult();
+  });
   speedSlider.addEventListener('input', function () { document.querySelector('#speed-value').textContent = Number(this.value) + '×'; });
   document.querySelector('#example').addEventListener('click', insertExample);
-  document.querySelector('#clear').addEventListener('click', function () { sourceInput.value = ''; updateResult(); sourceInput.focus(); });
+  document.querySelector('#clear').addEventListener('click', function () { morseKey.reset(); sourceInput.value = ''; updateResult(); (selectedCipher === 'morse' && decrypt ? document.querySelector('#morse-key') : sourceInput).focus(); });
   startButton.addEventListener('click', startAnimation);
   document.addEventListener('visibilitychange', function () {
     if (document.hidden && isRunning) {
       stopAnimation();
       stepStatus.textContent = 'Проигрывание остановлено при скрытии страницы.';
     }
+  });
+  const morseKey = window.MorseKey.create({
+    onPress: stopAnimation,
+    onCode: function (code) { sourceInput.value = code; updateResult(); },
+    language: function () { return document.querySelector('#morse-language').value; },
+    sound: function () { return document.querySelector('#sound').checked; },
   });
   selectCipher('caesar');
 })();
