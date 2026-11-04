@@ -1,116 +1,95 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f5f6f2" />
-    <title>Шифры Цезаря и Атбаш</title>
-    <link rel="stylesheet" href="styles.css?v=20261030-readable" />
-  </head>
-  <body>
-    <main class="app">
-      <h1 class="heading">Шифры</h1>
-      <div class="cipher-picker" role="group" aria-label="Выбор шифра">
-        <button class="mode" id="caesar-choice" type="button" aria-pressed="true">Цезарь</button>
-        <button class="mode" id="atbash-choice" type="button" aria-pressed="false">Атбаш</button>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f5f6f7" />
+  <title>Шифры</title>
+  <link rel="stylesheet" href="styles.css?v=20261104-eight" />
+</head>
+<body>
+<main class="app">
+  <h1 class="heading">Шифры</h1>
+  <nav class="cipher-picker" aria-label="Выбор шифра">
+    <button class="mode" data-cipher="caesar" aria-pressed="true">Цезарь</button>
+    <button class="mode" data-cipher="atbash" aria-pressed="false">Атбаш</button>
+    <button class="mode" data-cipher="scytale" aria-pressed="false">Скитала</button>
+    <button class="mode" data-cipher="morse" aria-pressed="false">Морзе</button>
+    <button class="mode" data-cipher="polybius" aria-pressed="false">Полибий</button>
+    <button class="mode" data-cipher="feistel" aria-pressed="false">Фейстель</button>
+    <button class="mode" data-cipher="digital" aria-pressed="false">Цифровой</button>
+    <button class="mode" data-cipher="vigenere" aria-pressed="false">Виженер</button>
+  </nav>
+  <p class="cipher-description" id="cipher-description"></p>
+  <section class="card" aria-label="Преобразование текста">
+    <div class="toolbar">
+      <div class="modes" role="group" aria-label="Режим">
+        <button class="mode" id="encrypt" aria-pressed="true">Зашифровать</button>
+        <button class="mode" id="decrypt" aria-pressed="false">Расшифровать</button>
       </div>
-      <p class="cipher-description" id="cipher-description">Цезарь: каждая буква сдвигается по алфавиту на выбранное число позиций.</p>
-      <div class="cipher-formula" id="atbash-formula" hidden>
-        <span class="formula-equation">y = N − 1 − x</span>
-        <span>x → y — номера букв от 0; N — размер алфавита.</span>
-        <span class="formula-example">А (0) → Я (32)</span>
+      <div class="settings" id="settings">
+        <label class="shift" data-setting="caesar">Сдвиг
+          <input class="range" id="range" type="range" min="0" max="32" value="3" aria-label="Сдвиг" />
+          <input class="num" id="number" type="number" min="0" max="32" value="3" aria-label="Число сдвига" />
+        </label>
+        <label data-setting="scytale" hidden>Столбцы <input class="num" id="columns" type="number" min="2" max="16" value="3" /></label>
+        <label data-setting="vigenere" hidden>Ключ <input id="vigenere-key" value="МАМА" maxlength="64" autocomplete="off" /></label>
+        <label data-setting="morse" hidden>Алфавит <select id="morse-language"><option value="ru">Русский</option><option value="en">Латинский</option></select></label>
+        <label data-setting="morse" hidden><input type="checkbox" id="sound" checked /> Звук · 600 Гц</label>
+        <label data-setting="feistel" hidden>Ключ DES <input id="des-key" value="133457799BBCDFF1" maxlength="16" spellcheck="false" autocomplete="off" /></label>
+        <label data-setting="feistel" hidden>Формат <select id="des-format"><option value="text">Текст UTF-8</option><option value="hex">HEX-блоки</option></select></label>
       </div>
-
-      <section class="card" aria-label="Преобразование текста">
-        <div class="toolbar">
-          <div class="modes" role="group" aria-label="Режим">
-            <button
-              class="mode"
-              id="encrypt"
-              type="button"
-              aria-pressed="true"
-            >
-              Зашифровать
-            </button>
-            <button
-              class="mode"
-              id="decrypt"
-              type="button"
-              aria-pressed="false"
-            >
-              Расшифровать
-            </button>
-          </div>
-
-          <div class="shift">
-            <span class="shift-label">Сдвиг</span>
-            <input
-              class="range"
-              id="range"
-              type="range"
-              min="0"
-              max="32"
-              value="3"
-              aria-label="Сдвиг"
-            />
-            <input
-              class="num"
-              id="number"
-              type="number"
-              min="0"
-              max="32"
-              value="3"
-              aria-label="Число сдвига"
-            />
-          </div>
-        </div>
-
-        <div class="workspace">
-          <div class="pane">
-            <div class="pane-head">
-              <label class="pane-title" for="source">Исходный текст</label>
-            </div>
-            <textarea
-              class="text-box"
-              id="source"
-              placeholder="Введите текст"
-              spellcheck="false"
-            ></textarea>
-          </div>
-
-          <div class="flow" aria-hidden="true"><span>→</span></div>
-
-          <div class="pane">
-            <div class="pane-head">
-              <label class="pane-title" for="result">Результат</label>
-            </div>
-            <textarea
-              class="text-box output"
-              id="result"
-              readonly
-              placeholder="Здесь появится результат"
-              aria-live="polite"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="bottom">
-          <button class="clear" id="clear" type="button">Очистить</button>
-          <span class="status" id="status" role="status" aria-live="polite"></span>
-          <button class="copy" id="start" type="button">
-            Начать
-          </button>
-        </div>
-      </section>
-    </main>
-
-    <script src="cipher.js?v=20261030-readable" defer></script>
-    <script src="atbash.js?v=20261030-readable" defer></script>
-    <script src="app.js?v=20261030-readable" defer></script>
-  </body>
+    </div>
+    <div class="workspace">
+      <div class="pane">
+        <div class="pane-head"><label class="pane-title" for="source">Исходный текст</label><button class="example" id="example">Пример</button></div>
+        <textarea class="text-box" id="source" placeholder="Введите текст" spellcheck="false" maxlength="8192"></textarea>
+      </div>
+      <div class="flow" aria-hidden="true"><span>→</span></div>
+      <div class="pane">
+        <div class="pane-head"><label class="pane-title" for="result">Результат</label></div>
+        <textarea class="text-box output" id="result" readonly placeholder="Здесь появится результат"></textarea>
+      </div>
+    </div>
+    <p class="form-error" id="error" role="alert" hidden></p>
+    <div class="bottom">
+      <button class="clear" id="clear">Очистить</button>
+      <div class="animation-controls">
+        <label class="animation-speed">Скорость <input type="range" id="speed" min="0.25" max="3" step="0.25" value="1" aria-label="Скорость анимации" /><output id="speed-value">1×</output></label>
+        <button class="animation-play" id="start" disabled>Начать</button>
+      </div>
+    </div>
+    <div class="animation-animation">
+      <p class="method-note" id="method-note"></p>
+      <div class="animation-legend"><span><i class="legend-88a9e8"></i>Исходное</span><span><i class="legend-d9ad51"></i>Шаг</span><span><i class="legend-28664f"></i>Результат</span></div>
+      <div class="morse-player" id="morse-player" hidden><span class="signal-lamp" id="signal-lamp" aria-hidden="true"></span><span id="signal-label">Точка · 1, тире · 3</span><div class="signal-strip" id="signal-strip" aria-label="Сигналы Морзе"></div></div>
+      <div class="feistel-diagram" id="feistel-diagram" hidden>
+        <svg viewBox="0 0 450 230" role="img" aria-labelledby="feistel-title">
+          <title id="feistel-title">Один раунд сети Фейстеля: левая половина становится правой после XOR, правая переходит влево</title>
+          <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" /></marker></defs>
+          <g class="network-lines"><path d="M80 48 L282 158"/><path d="M282 48 L80 192"/><path d="M282 48 V81"/><path d="M282 121 V143"/><path d="M282 171 V192"/><path d="M390 101 H320"/></g>
+          <g class="network-box"><rect x="20" y="14" width="120" height="34"/><rect x="222" y="14" width="120" height="34"/><rect x="20" y="192" width="120" height="34"/><rect x="222" y="192" width="120" height="34"/><rect x="244" y="81" width="76" height="40"/><rect x="350" y="79" width="95" height="44"/><circle cx="282" cy="157" r="14"/></g>
+          <g class="network-text"><text x="80" y="36" id="net-left">L</text><text x="282" y="36" id="net-right">R</text><text x="80" y="215" id="net-new-left">L′ = R</text><text x="282" y="215" id="net-new-right">R′ = L XOR f</text><text x="282" y="105">f(R,K)</text><text x="397" y="96">K</text><text x="397" y="114" id="net-key">—</text><text x="282" y="162">⊕</text></g>
+        </svg>
+        <p class="network-detail" id="network-detail"></p>
+      </div>
+      <div class="key-alignment" id="key-alignment" hidden></div>
+      <div id="tables"></div>
+      <div class="step-status" id="step-status" role="status" aria-live="polite">Введите текст и нажмите «Начать».</div>
+    </div>
+  </section>
+</main>
+<script src="cipher-tools.js?v=20261104-eight" defer></script>
+<script src="cipher.js?v=20261104-eight" defer></script>
+<script src="atbash.js?v=20261104-eight" defer></script>
+<script src="lesson-ciphers.js?v=20261104-eight" defer></script>
+<script src="scytale.js?v=20261104-eight" defer></script>
+<script src="morse.js?v=20261104-eight" defer></script>
+<script src="morse-audio.js?v=20261104-eight" defer></script>
+<script src="polybius.js?v=20261104-eight" defer></script>
+<script src="feistel.js?v=20261104-eight" defer></script>
+<script src="digital.js?v=20261104-eight" defer></script>
+<script src="vigenere.js?v=20261104-eight" defer></script>
+<script src="app.js?v=20261104-eight" defer></script>
+</body>
 </html>
-
-
-
-
-

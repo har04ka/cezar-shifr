@@ -1,263 +1,312 @@
-// Управление формой и пошаговая демонстрация шифров.
+// Выбор шифра, параметры и общее управление демонстрацией.
 (function () {
-  const { russianAlphabet, englishAlphabet } = window.CaesarCipher;
-  let cipherType = 'caesar';
-  function transformText(text, shift) {
-    if (cipherType === 'atbash') {
-      return window.AtbashCipher.transformText(text);
-    }
-    return window.CaesarCipher.transformText(text, shift, direction);
-  }
-
-  // Элементы формы.
   const sourceInput = document.querySelector('#source');
   const resultInput = document.querySelector('#result');
-  const shiftSlider = document.querySelector('#range');
-  const shiftInput = document.querySelector('#number');
-  const status = document.querySelector('#status');
-  const encryptButton = document.querySelector('#encrypt');
-  const decryptButton = document.querySelector('#decrypt');
-
-  let direction = 1;
-  // Новый номер отменяет старую анимацию после изменения текста или режима.
-  let animationVersion = 0;
-  const animation = document.createElement('div');
-  animation.classList.add('animation-animation');
   const startButton = document.querySelector('#start');
-  startButton.type = 'button';
-  startButton.textContent = 'Начать';
-  startButton.classList.add('animation-play');
-  const animationStatus = document.createElement('div');
-  animationStatus.classList.add('animation-frame');
-  animationStatus.setAttribute('role', 'status');
+  const stepStatus = document.querySelector('#step-status');
+  const speedSlider = document.querySelector('#speed');
+  const errorMessage = document.querySelector('#error');
+  const tables = document.querySelector('#tables');
+  const cellElements = new Map();
+  const descriptions = {
+    caesar: 'Цезарь: сдвиг букв по алфавиту на выбранное число позиций.',
+    atbash: 'Атбаш: первая буква заменяется последней. В плитке сверху исходная буква, снизу — её зеркальная пара.',
+    scytale: 'Скитала: перестановка символов. Записываем текст по строкам развёртки, считываем по столбцам.',
+    morse: 'Азбука Морзе: буквы превращаются в точки и тире. При нажатии «Начать» сигналы подсвечиваются и звучат.',
+    polybius: 'Квадрат Полибия: вариант со слайда с перестановкой координат и повторной заменой букв.',
+    feistel: 'Сеть Фейстеля: стандартный пример DES, 16 раундов. Следим за обменом половин и операцией XOR.',
+    digital: 'Цифровой шифр со слайда: номер позиции буквы, затем номер её раздела.',
+    vigenere: 'Виженер: повторяем ключ и находим пересечение строки ключа со столбцом исходной буквы. Таблица со слайда.',
+  };
+  let selectedCipher = 'caesar';
+  let decrypt = false;
+  let calculation = null;
+  let isRunning = false;
+  let animationId = 0;
+  let waitTimer = null;
+  let finishWait = null;
 
-  function createLetterRow(text) {
-    const row = document.createElement('div');
-    row.className = 'cipher-row';
-    for (const letter of text) {
-      const tile = document.createElement('span');
-      tile.className = 'cipher-tile';
-      tile.textContent = letter === ' ' ? '␣' : letter;
-      row.append(tile);
-    }
-    return row;
+  function options() {
+    return {
+      decrypt,
+      shift: document.querySelector('#number').value,
+      columns: document.querySelector('#columns').value,
+      key: document.querySelector(selectedCipher === 'feistel' ? '#des-key' : '#vigenere-key').value,
+      language: document.querySelector('#morse-language').value,
+      format: document.querySelector('#des-format').value,
+    };
   }
-  function createCaption(text) {
-    const label = document.createElement('div');
-    label.className = 'cipher-caption';
-    label.textContent = text;
-    return label;
+
+  function calculate(text, settings) {
+    if (selectedCipher === 'caesar' || selectedCipher === 'atbash') return window.LessonCiphers.run(selectedCipher, text, settings);
+    const methods = { scytale: window.ScytaleCipher, morse: window.MorseCipher, polybius: window.PolybiusCipher, feistel: window.FeistelCipher, digital: window.DigitalCipher, vigenere: window.VigenereCipher };
+    return methods[selectedCipher].run(text, settings);
   }
-  const russianRow = createLetterRow(russianAlphabet);
-  russianRow.className = 'alphabet-grid';
-  const englishRow = createLetterRow(englishAlphabet);
-  englishRow.className = 'alphabet-grid latin';
-  for (const [row, alphabet] of [[russianRow, russianAlphabet], [englishRow, englishAlphabet]]) {
-    for (let index = 0; index < row.children.length; index++) {
-      const tile = row.children[index];
-      tile.dataset.mirror = alphabet[alphabet.length - 1 - index];
-    }
+
+  function clearHighlight() {
+    for (const cell of cellElements.values()) cell.classList.remove('origin', 'transit', 'destination', 'pair-target', 'cross-highlight');
+    for (const signal of document.querySelectorAll('.signal.active')) signal.classList.remove('active');
+    document.querySelector('#signal-lamp').classList.remove('on');
   }
-  function clearAlphabetHighlight() {
-    for (const row of [russianRow, englishRow]) {
-      for (const tile of row.children) {
-        tile.classList.remove('origin', 'transit', 'destination', 'pair-target', 'visited');
-      }
-    }
+
+  function stopAnimation() {
+    animationId++;
+    isRunning = false;
+    startButton.textContent = 'Начать';
+    window.MorseAudio.stop();
+    if (waitTimer !== null) clearTimeout(waitTimer);
+    if (finishWait) finishWait();
+    waitTimer = null;
+    finishWait = null;
+    clearHighlight();
   }
-  const controls = document.createElement('div');
-  controls.className = 'animation-controls';
-  const speedLabel = document.createElement('label');
-  speedLabel.className = 'animation-speed';
-  const speedSlider = document.createElement('input');
-  speedSlider.type = 'range';
-  speedSlider.min = '0.25';
-  speedSlider.max = '3';
-  speedSlider.step = '0.25';
-  speedSlider.value = '1';
-  speedSlider.setAttribute('aria-label', 'Скорость анимации');
-  const speedValue = document.createElement('output');
-  speedValue.textContent = '1×';
-  speedSlider.addEventListener('input', function () {
-    speedValue.textContent = `${Number(speedSlider.value)}×`;
-  });
-  speedLabel.append('Скорость', speedSlider, speedValue);
-  controls.append(speedLabel, startButton);
-  document.querySelector('.bottom').append(controls);
-  const legend = document.createElement('div');
-  legend.className = 'animation-legend';
-  for (const [text, color] of [['Начало', '#88a9e8'], ['Промежуточный шаг', '#d9ad51'], ['Результат', '#28664f']]) {
-    const item = document.createElement('span');
-    const dot = document.createElement('i');
-    dot.className = 'legend-' + color.slice(1);
-    item.append(dot, text);
-    legend.append(item);
-  }
-  function animationDelay(milliseconds) {
-    const speedMultiplier = Number(speedSlider.value);
+
+  function wait(milliseconds) {
     return new Promise(function (resolve) {
-      setTimeout(resolve, milliseconds / speedMultiplier);
+      finishWait = resolve;
+      waitTimer = setTimeout(function () {
+        waitTimer = null;
+        finishWait = null;
+        resolve();
+      }, milliseconds);
     });
   }
-  const alphabetBoard = document.createElement('div');
-  alphabetBoard.className = 'alphabet-board';
-  alphabetBoard.append(legend, createCaption('Русский алфавит'), russianRow, createCaption('Латинский алфавит'), englishRow, animationStatus);
-  animation.append(alphabetBoard);
-  document.querySelector('section').append(animation);
-  let isRunning = false;
 
-  // Подсвечиваем исходную букву, затем её зеркальную замену.
-  async function animateAtbash(character, alphabet, alphabetRow, originIndex, version, progress) {
-    if (alphabet) alphabetRow.children[originIndex].classList.add('origin');
-    progress.textContent = alphabet ? `${character} — ищем букву в верхнем алфавите` : `${character === ' ' ? 'Пробел' : character} — символ не изменяется`;
-    await animationDelay(450);
-    if (version !== animationVersion) return;
-    if (alphabet) {
-      alphabetRow.children[originIndex].classList.add('pair-target');
-    }
-    const replacement = transformText(character);
-    progress.textContent = alphabet ? `${character} → ${replacement} · зеркальная пара: ${originIndex + 1} ↔ ${alphabet.length - originIndex}` : 'Этот символ остаётся без изменений';
-    await animationDelay(800);
-  }
-
-  // Для Цезаря показываем каждую промежуточную позицию.
-  async function animateCaesar(character, upper, alphabet, alphabetRow, originIndex, steps, version, progress) {
-    for (let step = 0; step <= steps; step++) {
-      if (version !== animationVersion) return;
-      const index = alphabet ? (alphabet.indexOf(upper) + direction * step + alphabet.length) % alphabet.length : 0;
-      const current = alphabet ? alphabet[index] : character;
-      for (let tileIndex = 0; tileIndex < alphabetRow.children.length; tileIndex++) {
-        const tile = alphabetRow.children[tileIndex];
-        if (alphabet && tileIndex === index && step > 0) tile.classList.add('visited');
-        tile.classList.toggle('origin', Boolean(alphabet) && tileIndex === originIndex);
-        tile.classList.toggle('transit', Boolean(alphabet) && tileIndex === index && step > 0 && step < steps);
-        tile.classList.toggle('destination', Boolean(alphabet) && tileIndex === index && step === steps);
+  function renderTable(model) {
+    const heading = document.createElement('p');
+    heading.className = 'cipher-caption';
+    heading.textContent = model.label;
+    const scroll = document.createElement('div');
+    scroll.className = 'table-scroll';
+    if (model.large) scroll.classList.add('large-table');
+    const table = document.createElement('table');
+    table.className = 'lesson-table';
+    if (model.large) table.classList.add('dense-table');
+    table.setAttribute('aria-label', model.label);
+    const body = document.createElement('tbody');
+    let row;
+    for (let index = 0; index < model.cells.length; index++) {
+      if (index % model.columns === 0) {
+        row = document.createElement('tr');
+        body.append(row);
       }
-      const displayCurrent = character === upper ? current : current.toLocaleLowerCase('ru');
-      progress.textContent = alphabet ? `${character} → ${displayCurrent} · шаг ${step} из ${steps}` : 'Этот символ остаётся без изменений';
-      await animationDelay(steps ? Math.max(150, 900 / steps) : 250);
-    }
-    if (version !== animationVersion) return;
-    await animationDelay(450);
-  }
-
-  async function startAnimation() {
-    const version = ++animationVersion;
-    if (isRunning) {
-      isRunning = false;
-      clearAlphabetHighlight();
-      startButton.textContent = 'Начать';
-      return;
-    }
-    isRunning = true;
-    startButton.textContent = 'Остановить';
-    let completed = '';
-    const characters = Array.from(sourceInput.value);
-    const progress = document.createElement('span');
-    animationStatus.replaceChildren(progress);
-    for (let i = 0; i < characters.length; i++) {
-      if (version !== animationVersion) return;
-      const character = characters[i];
-      const upper = character.toLocaleUpperCase('ru');
-      const alphabet = window.CaesarCipher.findAlphabet(character);
-      const steps = alphabet ? Number(shiftSlider.value) % alphabet.length : 0;
-      clearAlphabetHighlight();
-      const alphabetRow = alphabet === russianAlphabet ? russianRow : englishRow;
-      const originIndex = alphabet.indexOf(upper);
-      if (cipherType === 'atbash') {
-        await animateAtbash(character, alphabet, alphabetRow, originIndex, version, progress);
-      } else {
-        await animateCaesar(character, upper, alphabet, alphabetRow, originIndex, steps, version, progress);
+      const item = model.cells[index];
+      const cell = document.createElement(item.header ? 'th' : 'td');
+      cell.textContent = item.text;
+      cell.dataset.row = Math.floor(index / model.columns);
+      cell.dataset.column = index % model.columns;
+      if (item.mirror) {
+        const mirror = document.createElement('small');
+        mirror.className = 'mirror-letter';
+        mirror.textContent = item.mirror;
+        cell.append(mirror);
       }
-      if (version !== animationVersion) return;
-      completed += transformText(character, Number(shiftSlider.value));
+      row.append(cell);
+      if (item.id) cellElements.set(item.id, cell);
     }
-    if (version !== animationVersion) return;
-    progress.textContent = completed ? 'Готово — все буквы заменены' : 'Введите текст для анимации';
-    clearAlphabetHighlight();
-    isRunning = false;
-    startButton.textContent = 'Начать';
+    table.append(body);
+    scroll.append(table);
+    tables.append(heading, scroll);
   }
 
-  startButton.addEventListener('click', startAnimation);
+  function renderCalculation(data) {
+    tables.replaceChildren();
+    cellElements.clear();
+    document.querySelector('#method-note').textContent = data.note;
+    for (const model of data.tables || [data.table]) renderTable(model);
+    const alignment = document.querySelector('#key-alignment');
+    alignment.hidden = !data.alignment;
+    alignment.replaceChildren();
+    for (const row of data.alignment || []) {
+      const line = document.createElement('div');
+      line.textContent = row[0] + ': ' + row[1];
+      alignment.append(line);
+    }
+    document.querySelector('#morse-player').hidden = selectedCipher !== 'morse';
+    document.querySelector('#feistel-diagram').hidden = selectedCipher !== 'feistel';
+    const signals = document.querySelector('#signal-strip');
+    signals.replaceChildren();
+    for (let index = 0; index < (data.display || []).length; index++) {
+      const item = data.display[index];
+      const symbol = document.createElement('span');
+      symbol.className = item.gap ? 'signal-gap' : 'signal';
+      symbol.textContent = item.symbol;
+      symbol.dataset.signal = index;
+      if (item.letter) symbol.title = item.letter;
+      signals.append(symbol);
+    }
+  }
 
-  // Пересчёт результата и сброс проигрывания.
   function updateResult() {
-    clearAlphabetHighlight();
-    animationVersion++;
-    isRunning = false;
-    animationStatus.textContent = '';
-    startButton.disabled = !sourceInput.value;
-    startButton.textContent = 'Начать';
-    const shift = Math.max(
-      0,
-      Math.min(32, Math.trunc(Number(shiftSlider.value) || 0)),
-    );
+    stopAnimation();
+    errorMessage.hidden = true;
+    stepStatus.textContent = 'Введите текст и нажмите «Начать».';
+    calculation = null;
+    try {
+      const limit = selectedCipher === 'feistel' && (decrypt || options().format === 'hex') ? 8192 : 1024;
+      if (Array.from(sourceInput.value).length > limit) throw new Error(`Для наглядной демонстрации введите не больше ${limit} символов.`);
+      calculation = calculate(sourceInput.value, options());
+      resultInput.value = sourceInput.value ? calculation.text : '';
+      renderCalculation(calculation);
+      startButton.disabled = !sourceInput.value || (selectedCipher === 'morse' ? !calculation.signals.length : !calculation.steps.length);
+    } catch (error) {
+      resultInput.value = '';
+      errorMessage.textContent = error.message;
+      errorMessage.hidden = false;
+      startButton.disabled = true;
+      tables.replaceChildren();
+      document.querySelector('#method-note').textContent = '';
+      document.querySelector('#signal-strip').replaceChildren();
+      document.querySelector('#key-alignment').hidden = true;
+    }
+  }
 
-    shiftSlider.value = shiftInput.value = shift;
-    resultInput.value = transformText(sourceInput.value, shift);
-    status.textContent = '';
+  function selectCipher(name) {
+    selectedCipher = name;
+    for (const button of document.querySelectorAll('[data-cipher]')) button.setAttribute('aria-pressed', String(button.dataset.cipher === name));
+    for (const field of document.querySelectorAll('[data-setting]')) field.hidden = field.dataset.setting !== name;
+    document.querySelector('#cipher-description').textContent = descriptions[name];
+    sourceInput.placeholder = decrypt ? 'Введите зашифрованный текст' : 'Введите текст';
+    updateResult();
   }
 
   function setMode(value) {
-    direction = value;
-    encryptButton.setAttribute('aria-pressed', String(value === 1));
-    decryptButton.setAttribute('aria-pressed', String(value === -1));
-    updateResult();
+    decrypt = value;
+    document.querySelector('#encrypt').setAttribute('aria-pressed', String(!value));
+    document.querySelector('#decrypt').setAttribute('aria-pressed', String(value));
+    selectCipher(selectedCipher);
   }
 
-  shiftSlider.addEventListener('input', function () {
-    shiftInput.value = shiftSlider.value;
-    updateResult();
-  });
+  function highlight(ids, className) {
+    for (const id of ids || []) cellElements.get(id)?.classList.add(className);
+  }
 
-  shiftInput.addEventListener('input', function () {
-    if (shiftInput.value === '') {
+  function updateNetwork(values) {
+    if (!values) return;
+    for (const [id, value] of [['net-left', values.left], ['net-right', values.right], ['net-key', values.key], ['net-new-left', values.newLeft], ['net-new-right', values.newRight]]) document.getElementById(id).textContent = value;
+    document.querySelector('#network-detail').textContent = `E(R) = ${values.expanded}; E(R) XOR K = ${values.mixed}; f(R,K) = ${values.f}. Значения показаны в HEX.`;
+  }
+
+  async function playSteps(data, runId) {
+    for (let index = 0; index < data.steps.length; index++) {
+      if (runId !== animationId) return;
+      const step = data.steps[index];
+      clearHighlight();
+      highlight(step.origin, 'origin');
+      highlight(step.transit, 'transit');
+      highlight(step.destination, 'destination');
+      highlight(step.mirror, 'pair-target');
+      if (step.row !== undefined) {
+        for (const cell of tables.querySelectorAll('td')) {
+          if (Number(cell.dataset.row) === step.row || Number(cell.dataset.column) === step.column) cell.classList.add('cross-highlight');
+        }
+      }
+      // Прокручивается только большая таблица, положение страницы сохраняется.
+      const target = cellElements.get((step.destination || [])[0]);
+      if (target) {
+        const scroll = target.closest('.large-table');
+        if (scroll) {
+          const tableRect = scroll.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          scroll.scrollTop += targetRect.top - tableRect.top - scroll.clientHeight / 2;
+          scroll.scrollLeft += targetRect.left - tableRect.left - scroll.clientWidth / 2;
+        }
+      }
+      updateNetwork(step.feistel);
+      stepStatus.textContent = `${index + 1} / ${data.steps.length} · ${step.detail}`;
+
+      await wait(650 / Number(speedSlider.value));
+    }
+  }
+
+  async function playMorse(data, runId, sound) {
+    if (sound) await window.MorseAudio.prepare();
+    if (runId !== animationId) return;
+    const label = document.querySelector('#signal-label');
+    for (const signal of data.signals) {
+      if (runId !== animationId) return;
+      clearHighlight();
+      const duration = signal.units * 120 / Number(speedSlider.value);
+      if (signal.on) {
+        const tile = document.querySelector(`[data-signal="${signal.index}"]`);
+        if (tile) tile.classList.add('active');
+        document.querySelector('#signal-lamp').classList.add('on');
+        highlight([`m-${signal.code}`], 'destination');
+        label.textContent = `${signal.letter}: ${signal.symbol === '.' ? 'точка' : 'тире'} · ${signal.units} ед.`;
+        stepStatus.textContent = `${signal.letter} → ${signal.code}. Сейчас звучит ${signal.symbol === '.' ? 'точка' : 'тире'}.`;
+        if (!sound) stepStatus.textContent = `${signal.letter} → ${signal.code}. Сейчас показана ${signal.symbol === '.' ? 'точка' : 'тире'}.`;
+        if (sound) window.MorseAudio.tone(duration);
+      } else label.textContent = `Пауза · ${signal.units} ед.`;
+      await wait(duration);
+    }
+    window.MorseAudio.stop();
+  }
+
+  async function startAnimation() {
+    if (isRunning) {
+      stopAnimation();
+      stepStatus.textContent = 'Остановлено. Повторный запуск — с начала.';
       return;
     }
-
-    shiftSlider.value = String(
-      Math.max(0, Math.min(32, Math.trunc(Number(shiftInput.value) || 0))),
-    );
-    updateResult();
-  });
-
-  shiftInput.addEventListener('change', function () {
-    shiftSlider.value = String(
-      Math.max(0, Math.min(32, Math.trunc(Number(shiftInput.value) || 0))),
-    );
-    updateResult();
-  });
-
-  sourceInput.addEventListener('input', updateResult);
-  encryptButton.addEventListener('click', function () { setMode(1); });
-  decryptButton.addEventListener('click', function () { setMode(-1); });
-
-  function selectCipher(type) {
-    cipherType = type;
-    const isAtbash = type === 'atbash';
-    document.querySelector('#atbash-formula').hidden = !isAtbash;
-    document.querySelector('#caesar-choice').setAttribute('aria-pressed', String(!isAtbash));
-    document.querySelector('#atbash-choice').setAttribute('aria-pressed', String(isAtbash));
-    document.querySelector('.shift').hidden = isAtbash;
-    document.querySelector('.modes').hidden = isAtbash;
-    document.querySelector('.toolbar').hidden = isAtbash;
-    animation.classList.toggle('atbash-view', isAtbash);
-    legend.children[1].hidden = isAtbash;
-    document.querySelector('#cipher-description').textContent = isAtbash
-      ? 'Атбаш: первая буква заменяется последней, вторая — предпоследней. В каждой плитке сверху исходная буква, снизу — замена. Повторное преобразование расшифровывает текст.'
-      : 'Цезарь: каждая буква сдвигается по алфавиту на выбранное число позиций.';
-    updateResult();
+    if (!calculation || !sourceInput.value) return;
+    const data = calculation;
+    const runId = ++animationId;
+    isRunning = true;
+    startButton.textContent = 'Остановить';
+    try {
+      if (selectedCipher === 'morse') await playMorse(data, runId, document.querySelector('#sound').checked);
+      else await playSteps(data, runId);
+      if (runId !== animationId) return;
+      stopAnimation();
+      stepStatus.textContent = 'Готово. Все шаги выполнены.';
+    } catch (error) {
+      if (runId !== animationId) return;
+      stopAnimation();
+      errorMessage.hidden = false;
+      errorMessage.textContent = error.message;
+    }
   }
 
-  document.querySelector('#caesar-choice').addEventListener('click', function () { selectCipher('caesar'); });
-  document.querySelector('#atbash-choice').addEventListener('click', function () { selectCipher('atbash'); });
+  function insertExample() {
+    const examples = { caesar: 'Привет', atbash: 'Привет', scytale: 'ПЕРЕСТАНОВКА', morse: document.querySelector('#morse-language').value === 'ru' ? 'СОС' : 'SOS', polybius: 'МАМА', feistel: '0123456789ABCDEF', digital: 'АНАНАС', vigenere: 'АФРИКА' };
+    if (selectedCipher === 'feistel') {
+      document.querySelector('#des-format').value = 'hex';
+      document.querySelector('#des-key').value = '133457799BBCDFF1';
+    }
+    if (selectedCipher === 'vigenere') document.querySelector('#vigenere-key').value = 'МАМА';
+    try {
+      const settings = options();
+      settings.decrypt = false;
+      sourceInput.value = decrypt ? calculate(examples[selectedCipher], settings).text : examples[selectedCipher];
+      updateResult();
+    } catch (error) {
+      errorMessage.hidden = false;
+      errorMessage.textContent = error.message;
+    }
+  }
 
-  document.querySelector('#clear').addEventListener('click', function () {
-    sourceInput.value = '';
+  for (const button of document.querySelectorAll('[data-cipher]')) button.addEventListener('click', function () { selectCipher(button.dataset.cipher); });
+  document.querySelector('#encrypt').addEventListener('click', function () { setMode(false); });
+  document.querySelector('#decrypt').addEventListener('click', function () { setMode(true); });
+  sourceInput.addEventListener('input', updateResult);
+  document.querySelector('#range').addEventListener('input', function () {
+    document.querySelector('#number').value = this.value;
     updateResult();
-    sourceInput.focus();
   });
-
-  updateResult();
+  document.querySelector('#number').addEventListener('input', function () {
+    if (Number.isInteger(Number(this.value)) && Number(this.value) >= 0 && Number(this.value) <= 32 && this.value !== '') document.querySelector('#range').value = this.value;
+    updateResult();
+  });
+  for (const field of document.querySelectorAll('#settings input:not(#range):not(#number), #settings select')) field.addEventListener('input', updateResult);
+  speedSlider.addEventListener('input', function () { document.querySelector('#speed-value').textContent = Number(this.value) + '×'; });
+  document.querySelector('#example').addEventListener('click', insertExample);
+  document.querySelector('#clear').addEventListener('click', function () { sourceInput.value = ''; updateResult(); sourceInput.focus(); });
+  startButton.addEventListener('click', startAnimation);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && isRunning) {
+      stopAnimation();
+      stepStatus.textContent = 'Проигрывание остановлено при скрытии страницы.';
+    }
+  });
+  selectCipher('caesar');
 })();
