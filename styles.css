@@ -127,3 +127,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .network-output .network-lines path { stroke:#3d9b6a; stroke-width:2.5; }
 @keyframes cell-arrive { from { transform:translateY(-3px); } to { transform:translateY(0); } }
 @media(prefers-reduced-motion:reduce) { .lesson-table td.destination,.pair-target .mirror-letter { animation:none; } }
+
+body { grid-template-columns:minmax(0,1fr); }
+.app { min-width:0; justify-self:center; }
