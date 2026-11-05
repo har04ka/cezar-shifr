@@ -130,3 +130,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 
 body { grid-template-columns:minmax(0,1fr); }
 .app { min-width:0; justify-self:center; }
+
+.grouped-table { min-width:640px; border-spacing:0; border-collapse:collapse; }
+.grouped-table td { border:1px solid #d8e0e8; border-radius:0; height:44px; padding:5px 3px; white-space:nowrap; background:#fff; }
+.grouped-table tr:first-child td { color:#8d423b; font-weight:600; }
+.grouped-table tr:last-child td { color:#325b91; background:#f5f8fc; font-weight:600; }
+.group-letter { display:inline-block; padding:3px 2px; border-radius:3px; transition:background .18s; }
+.group-letter.origin { background:#82b9f5; color:#153b66; }
+.group-letter.destination { background:#77d6a0; color:#164b2c; animation:cell-arrive .3s ease-out; }
+.grouped-table td.origin { background:#82b9f5; }
+.grouped-table td.destination { background:#77d6a0; }
+@media(prefers-reduced-motion:reduce) { .group-letter { transition:none; } .group-letter.destination { animation:none; } }

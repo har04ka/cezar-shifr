@@ -84,6 +84,7 @@
     const table = document.createElement('table');
     table.className = 'lesson-table';
     if (model.large) table.classList.add('dense-table');
+    if (model.grouped) table.classList.add('grouped-table');
     table.setAttribute('aria-label', model.label);
     const body = document.createElement('tbody');
     let row;
@@ -95,6 +96,17 @@
       const item = model.cells[index];
       const cell = document.createElement(item.header ? 'th' : 'td');
       cell.textContent = item.text;
+      if (item.letters) {
+        cell.replaceChildren();
+        for (const letter of item.letters) {
+          const tile = document.createElement('span');
+          tile.className = 'group-letter';
+          tile.textContent = letter.text;
+          tile.title = 'Позиция ' + letter.position;
+          cell.append(tile);
+          cellElements.set(letter.id, tile);
+        }
+      }
       cell.dataset.row = Math.floor(index / model.columns);
       cell.dataset.column = index % model.columns;
       if (item.mirror) {

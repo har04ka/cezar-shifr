@@ -4,12 +4,15 @@ window.DigitalCipher = (function () {
   function run(text, options) {
     const cells = [];
     const tools = window.CipherTools;
-    for (let group = 0; group < groups.length; group++) cells.push(tools.cell(`Раздел ${group + 1}`, '', true));
-    for (let position = 0; position < 4; position++) {
-      for (let group = 0; group < 8; group++) {
-        cells.push(tools.cell(`${groups[group][position]} · ${position + 1}${group + 1}`, `d-${position + 1}${group + 1}`));
-      }
+    // Верхняя строка — группы букв, нижняя — номера разделов.
+    for (let group = 0; group < groups.length; group++) {
+      const cell = tools.cell(groups[group], '');
+      cell.letters = Array.from(groups[group], function (letter, position) {
+        return { text: letter, id: `d-${position + 1}${group + 1}`, position: position + 1 };
+      });
+      cells.push(cell);
     }
+    for (let group = 0; group < groups.length; group++) cells.push(tools.cell(group + 1, `dg-${group + 1}`));
 
     let result = '';
     const steps = [];
@@ -24,7 +27,7 @@ window.DigitalCipher = (function () {
           const group = Number(code[1]) - 1;
           const letter = groups[group][position];
           result += letter;
-          steps.push({ destination: [`d-${code}`], detail: `${code}: позиция ${position + 1}, раздел ${group + 1} → ${letter}`, output: result });
+          steps.push({ origin: [`dg-${group + 1}`], destination: [`d-${code}`], detail: `${code}: позиция ${position + 1}, раздел ${group + 1} → ${letter}`, output: result });
         }
       }
     } else {
@@ -40,11 +43,11 @@ window.DigitalCipher = (function () {
           if (!first) result += ' ';
           first = false;
           result += code;
-          steps.push({ destination: [`d-${code}`], detail: `${letter}: позиция ${position + 1}, раздел ${group + 1} → ${code}`, output: result });
+          steps.push({ origin: [`d-${code}`], destination: [`dg-${group + 1}`], detail: `${letter}: позиция ${position + 1}, раздел ${group + 1} → ${code}`, output: result });
         }
       }
     }
-    return { text: result, steps, table: { columns: 8, cells, label: 'Цифровой шифр: позиция, затем раздел' }, note: 'Например, Н находится на позиции 2 в разделе 4: Н → 24. Используются русские буквы без Ё; / разделяет слова, регистр не сохраняется.' };
+    return { text: result, steps, table: { columns: 8, cells, grouped: true, label: 'Группы букв и номера разделов' }, note: 'Например, Н находится на позиции 2 в разделе 4: Н → 24. Используются русские буквы без Ё; / разделяет слова, регистр не сохраняется.' };
   }
   return { run, groups };
 })();
