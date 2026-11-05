@@ -112,3 +112,18 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 #key-feedback { min-height:36px; margin:10px 0 0; color:#49647c; font-size:13px; }
 .key-hint { margin:4px 0 0; font-size:12px; color:var(--muted); line-height:1.6; }
 @media(max-width:700px) { .manual-morse { margin:14px 16px 0; } }
+
+/* Цвет показывает роль клетки; результат появляется после исходных данных. */
+.lesson-table td.origin,.lesson-table th.origin { background:#82b9f5; color:#153b66; }
+.lesson-table td.transit { background:#ffce57; color:#624400; }
+.lesson-table td.destination { background:#77d6a0; color:#164b2c; animation:cell-arrive .3s ease-out; }
+.lesson-table td.cross-highlight { background:#fff0bb; }
+.lesson-table td.cross-highlight.destination { background:#77d6a0; }
+.pair-target .mirror-letter { background:#77d6a0; color:#164b2c; animation:cell-arrive .3s ease-out; }
+.legend-88a9e8 { background:#82b9f5; } .legend-d9ad51 { background:#ffce57; } .legend-28664f { background:#77d6a0; }
+.network-input .network-box rect:nth-child(-n+2) { fill:#82b9f5; }
+.network-input .network-box rect:nth-child(5),.network-input .network-box rect:nth-child(6),.network-input .network-box circle { fill:#ffce57; }
+.network-output .network-box rect:nth-child(3),.network-output .network-box rect:nth-child(4) { fill:#77d6a0; }
+.network-output .network-lines path { stroke:#3d9b6a; stroke-width:2.5; }
+@keyframes cell-arrive { from { transform:translateY(-3px); } to { transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce) { .lesson-table td.destination,.pair-target .mirror-letter { animation:none; } }

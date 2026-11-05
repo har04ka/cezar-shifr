@@ -9,7 +9,7 @@ window.VigenereCipher = (function () {
     for (let row = 0; row < alphabet.length; row++) {
       cells.push(tools.cell(alphabet[row], `v-row-${row}`, true));
       for (let column = 0; column < alphabet.length; column++) {
-        // На фото первая строка начинается с Б: дополнительный сдвиг +1.
+        // Первая строка начинается с Б: дополнительный сдвиг +1.
         cells.push(tools.cell(alphabet[(column + row + 1) % alphabet.length], `v-${row}-${column}`));
       }
     }
@@ -43,9 +43,9 @@ window.VigenereCipher = (function () {
           : `Текст ${letter.toUpperCase()}, ключ ${keyLetter}: (${index} + ${keyIndex} + 1) mod ${alphabet.length} = ${outputIndex} → ${replacement}`,
         output: result });
     }
-    return { text: result, steps, table: { columns: alphabet.length + 1, cells, label: 'Таблица Виженера со слайда', large: true },
+    return { text: result, steps, table: { columns: alphabet.length + 1, cells, label: 'Таблица Виженера', large: true },
       alignment: [['Текст', input], ['Ключ', expandedKey]],
-      note: 'Вариант со слайда: y = (x + k + 1) mod N. Русский алфавит без Ё (Ё → Е). АФРИКА + МАМА → НХЭЙЧБ. Пробелы не расходуют буквы ключа.' };
+      note: 'Здесь y = (x + k + 1) mod N, номера букв от 0. Для расшифровки вычитаем k + 1. Ё заменяется на Е; знаки и пробелы не расходуют ключ.' };
   }
   return { run };
 })();

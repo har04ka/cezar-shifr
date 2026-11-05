@@ -13,10 +13,10 @@
     atbash: 'Атбаш: первая буква заменяется последней. В плитке сверху исходная буква, снизу — её зеркальная пара.',
     scytale: 'Скитала: перестановка символов. Записываем текст по строкам развёртки, считываем по столбцам.',
     morse: 'Морзе: удерживайте ключ для ввода сигналов. Короткое нажатие — точка, длинное — тире. Пауза завершает букву.',
-    polybius: 'Квадрат Полибия: вариант со слайда с перестановкой координат и повторной заменой букв.',
+    polybius: 'Полибий: записываем столбцы всех букв слова, затем их строки. Делим полученные цифры на пары и находим новые буквы в квадрате.',
     feistel: 'Сеть Фейстеля: стандартный пример DES, 16 раундов. Следим за обменом половин и операцией XOR.',
-    digital: 'Цифровой шифр со слайда: номер позиции буквы, затем номер её раздела.',
-    vigenere: 'Виженер: повторяем ключ и находим пересечение строки ключа со столбцом исходной буквы. Таблица со слайда.',
+    digital: 'Цифровой шифр: буквы разбиты на восемь разделов. Первая цифра обозначает позицию буквы в разделе, вторая — номер раздела.',
+    vigenere: 'Виженер: повторяем ключ под текстом. Строка задаётся буквой ключа, столбец — буквой текста, на пересечении находится результат.',
   };
   let selectedCipher = 'caesar';
   let decrypt = false;
@@ -59,6 +59,8 @@
     waitTimer = null;
     finishWait = null;
     clearHighlight();
+    document.querySelector('#feistel-diagram').classList.remove('network-input', 'network-output');
+    if (calculation) resultInput.value = calculation.text;
   }
 
   function wait(milliseconds) {
@@ -112,7 +114,7 @@
   function renderCalculation(data) {
     tables.replaceChildren();
     cellElements.clear();
-    document.querySelector('#method-note').textContent = data.note;
+    document.querySelector('#cipher-description').textContent = descriptions[selectedCipher] + ' ' + data.note;
     for (const model of data.tables || [data.table]) renderTable(model);
     const alignment = document.querySelector('#key-alignment');
     alignment.hidden = !data.alignment;
@@ -155,7 +157,7 @@
       errorMessage.hidden = false;
       startButton.disabled = true;
       tables.replaceChildren();
-      document.querySelector('#method-note').textContent = '';
+      document.querySelector('#cipher-description').textContent = descriptions[selectedCipher];
       document.querySelector('#signal-strip').replaceChildren();
       document.querySelector('#key-alignment').hidden = true;
     }
@@ -208,8 +210,9 @@
       clearHighlight();
       highlight(step.origin, 'origin');
       highlight(step.transit, 'transit');
-      highlight(step.destination, 'destination');
-      highlight(step.mirror, 'pair-target');
+      const diagram = document.querySelector('#feistel-diagram');
+      diagram.classList.toggle('network-input', !!step.feistel);
+      diagram.classList.remove('network-output');
       if (step.row !== undefined) {
         for (const cell of tables.querySelectorAll('td')) {
           if (Number(cell.dataset.row) === step.row || Number(cell.dataset.column) === step.column) cell.classList.add('cross-highlight');
@@ -229,7 +232,15 @@
       updateNetwork(step.feistel);
       stepStatus.textContent = `${index + 1} / ${data.steps.length} · ${step.detail}`;
 
-      await wait(650 / Number(speedSlider.value));
+      // Сначала показываем исходные данные, затем результат этого шага.
+      await wait(250 / Number(speedSlider.value));
+      if (runId !== animationId) return;
+      highlight(step.destination, 'destination');
+      highlight(step.mirror, 'pair-target');
+      diagram.classList.remove('network-input');
+      diagram.classList.toggle('network-output', !!step.feistel);
+      if (step.output !== undefined) resultInput.value = step.output;
+      await wait(450 / Number(speedSlider.value));
     }
   }
 
@@ -270,6 +281,7 @@
     const data = calculation;
     const runId = ++animationId;
     isRunning = true;
+    if (selectedCipher !== 'morse' && data.steps.some(function (step) { return step.output !== undefined; })) resultInput.value = '';
     startButton.textContent = 'Остановить';
     try {
       if (selectedCipher === 'morse') await playMorse(data, runId, document.querySelector('#sound').checked);

@@ -34,7 +34,7 @@ window.DigitalCipher = (function () {
         let first = true;
         for (const letter of words[wordIndex]) {
           const group = groups.findIndex(function (letters) { return letters.includes(letter); });
-          if (group < 0) throw new Error('Цифровой шифр со слайда принимает русские буквы без Ё и пробелы.');
+          if (group < 0) throw new Error('Цифровой шифр принимает русские буквы без Ё и пробелы.');
           const position = groups[group].indexOf(letter);
           const code = `${position + 1}${group + 1}`;
           if (!first) result += ' ';
@@ -44,7 +44,7 @@ window.DigitalCipher = (function () {
         }
       }
     }
-    return { text: result, steps, table: { columns: 8, cells, label: 'Цифровой шифр: позиция, затем раздел' }, note: 'Вариант со слайда: сначала номер позиции, затем номер раздела. АНАНАС → 11 24 11 24 11 25. Регистр не кодируется.' };
+    return { text: result, steps, table: { columns: 8, cells, label: 'Цифровой шифр: позиция, затем раздел' }, note: 'Например, Н находится на позиции 2 в разделе 4: Н → 24. Используются русские буквы без Ё; / разделяет слова, регистр не сохраняется.' };
   }
   return { run, groups };
 })();

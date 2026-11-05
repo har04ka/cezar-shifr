@@ -117,7 +117,7 @@ window.FeistelCipher = (function () {
       catch (error) { throw new Error('Расшифрованный блок не является UTF-8 текстом. Проверьте ключ или выберите HEX.'); }
     }
     return { text: result, steps, table: { columns: 7, cells, label: 'Раунды сети Фейстеля DES', large: true },
-      note: 'Сеть со слайда реализована на примере DES (FIPS 46-3): 16 раундов, L′ = R; R′ = L XOR f(R,K). f: расширение E → XOR с K → S-блоки → перестановка P. Расшифровка — ключи в обратном порядке. UTF-8: блоки по 8 байт, PKCS#7, ECB; HEX: без дополнения. Учебная демонстрация исторического алгоритма.' };
+      note: 'L′ = R; R′ = L XOR f(R,K). f: расширение E → XOR с K → S-блоки → перестановка P. Расшифровка — ключи в обратном порядке. UTF-8: блоки по 8 байт, PKCS#7, ECB; HEX: без дополнения. Учебная демонстрация исторического алгоритма.' };
   }
   return { run, block, roundFunction, roundKeys };
 })();
