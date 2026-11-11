@@ -16,6 +16,8 @@
     polybius: 'Полибий: записываем столбцы всех букв слова, затем их строки. Делим полученные цифры на пары и находим новые буквы в квадрате.',
     feistel: 'Сеть Фейстеля: стандартный пример DES, 16 раундов. Следим за обменом половин и операцией XOR.',
     digital: 'Цифровой шифр: буквы разбиты на восемь разделов. Первая цифра обозначает позицию буквы в разделе, вторая — номер раздела.',
+    playfair: 'Плэйфер: строим матрицу по ключу и заменяем буквы парами. Для общей строки или столбца сдвигаем буквы, для прямоугольника меняем столбцы.',
+    vernam: 'Вернам: каждый байт текста складывается с байтом повторяющегося ключа через XOR. Повторный XOR с тем же ключом возвращает исходный байт.',
     vigenere: 'Виженер: повторяем ключ под текстом. Строка задаётся буквой ключа, столбец — буквой текста, на пересечении находится результат.',
   };
   let selectedCipher = 'caesar';
@@ -31,7 +33,7 @@
       decrypt,
       shift: document.querySelector('#number').value,
       columns: document.querySelector('#columns').value,
-      key: document.querySelector(selectedCipher === 'feistel' ? '#des-key' : '#vigenere-key').value,
+      key: document.querySelector(({ feistel: '#des-key', playfair: '#playfair-key', vernam: '#vernam-key' })[selectedCipher] || '#vigenere-key').value,
       language: document.querySelector('#morse-language').value,
       format: document.querySelector('#des-format').value,
     };
@@ -39,7 +41,7 @@
 
   function calculate(text, settings) {
     if (selectedCipher === 'caesar' || selectedCipher === 'atbash') return window.LessonCiphers.run(selectedCipher, text, settings);
-    const methods = { scytale: window.ScytaleCipher, morse: window.MorseCipher, polybius: window.PolybiusCipher, feistel: window.FeistelCipher, digital: window.DigitalCipher, vigenere: window.VigenereCipher };
+    const methods = { scytale: window.ScytaleCipher, morse: window.MorseCipher, polybius: window.PolybiusCipher, feistel: window.FeistelCipher, digital: window.DigitalCipher, vigenere: window.VigenereCipher, playfair: window.PlayfairCipher, vernam: window.VernamCipher };
     return methods[selectedCipher].run(text, settings);
   }
 
@@ -220,6 +222,11 @@
       if (runId !== animationId) return;
       const step = data.steps[index];
       clearHighlight();
+      if (step.bitValues) {
+        for (let bit = 0; bit < step.bitValues.length; bit++) {
+          cellElements.get('vn-' + bit).textContent = bit < 16 ? step.bitValues[bit] : '·';
+        }
+      }
       highlight(step.origin, 'origin');
       highlight(step.transit, 'transit');
       const diagram = document.querySelector('#feistel-diagram');
@@ -247,6 +254,9 @@
       // Сначала показываем исходные данные, затем результат этого шага.
       await wait(250 / Number(speedSlider.value));
       if (runId !== animationId) return;
+      if (step.bitValues) {
+        for (let bit = 16; bit < 24; bit++) cellElements.get('vn-' + bit).textContent = step.bitValues[bit];
+      }
       highlight(step.destination, 'destination');
       highlight(step.mirror, 'pair-target');
       diagram.classList.remove('network-input');
@@ -310,7 +320,7 @@
   }
 
   function insertExample() {
-    const examples = { caesar: 'Привет', atbash: 'Привет', scytale: 'ПЕРЕСТАНОВКА', morse: document.querySelector('#morse-language').value === 'ru' ? 'СОС' : 'SOS', polybius: 'МАМА', feistel: '0123456789ABCDEF', digital: 'АНАНАС', vigenere: 'АФРИКА' };
+    const examples = { caesar: 'Привет', atbash: 'Привет', scytale: 'ПЕРЕСТАНОВКА', morse: document.querySelector('#morse-language').value === 'ru' ? 'СОС' : 'SOS', polybius: 'МАМА', feistel: '0123456789ABCDEF', digital: 'АНАНАС', vigenere: 'АФРИКА', playfair: 'КОЛЛЕКЦИЯ', vernam: 'ПРИВЕТ' };
     if (selectedCipher === 'feistel') {
       document.querySelector('#des-format').value = 'hex';
       document.querySelector('#des-key').value = '133457799BBCDFF1';

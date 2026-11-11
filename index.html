@@ -19,6 +19,8 @@
     <button class="mode" data-cipher="feistel" aria-pressed="false">Фейстель</button>
     <button class="mode" data-cipher="digital" aria-pressed="false">Цифровой</button>
     <button class="mode" data-cipher="vigenere" aria-pressed="false">Виженер</button>
+    <button class="mode" data-cipher="playfair" aria-pressed="false">Плэйфер</button>
+    <button class="mode" data-cipher="vernam" aria-pressed="false">Вернам</button>
   </nav>
   <p class="cipher-description" id="cipher-description"></p>
   <section class="card" aria-label="Преобразование текста">
@@ -34,6 +36,8 @@
         </label>
         <label data-setting="scytale" hidden>Столбцы <input class="num" id="columns" type="number" min="2" max="16" value="3" /></label>
         <label data-setting="vigenere" hidden>Ключ <input id="vigenere-key" value="МАМА" maxlength="64" autocomplete="off" /></label>
+        <label data-setting="playfair" hidden>Ключ <input id="playfair-key" value="КЛЮЧ" maxlength="64" size="12" autocomplete="off" /></label>
+        <label data-setting="vernam" hidden>Ключ <input id="vernam-key" value="КЛЮЧ" maxlength="64" size="12" autocomplete="off" /></label>
         <label data-setting="morse" hidden>Алфавит <select id="morse-language"><option value="ru">Русский</option><option value="en">Латинский</option></select></label>
         <label data-setting="morse" hidden><input type="checkbox" id="sound" checked /> Звук · 600 Гц</label>
         <label data-setting="feistel" hidden>Ключ DES <input id="des-key" value="133457799BBCDFF1" maxlength="16" spellcheck="false" autocomplete="off" /></label>
@@ -97,7 +101,9 @@
 <script src="feistel.js?v=20261105-digital" defer></script>
 <script src="digital.js?v=20261105-digital" defer></script>
 <script src="vigenere.js?v=20261105-digital" defer></script>
-<script src="app.js?v=20261112-scytale" defer></script>
+<script src="playfair.js?v=20261112-two" defer></script>
+<script src="vernam.js?v=20261112-two" defer></script>
+<script src="app.js?v=20261112-two" defer></script>
 </body>
 </html>
 
